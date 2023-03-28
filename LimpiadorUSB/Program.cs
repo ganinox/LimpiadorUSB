@@ -71,7 +71,6 @@ namespace LimpiadorUSB
                 Console.WriteLine("No se han encontrado archivos maliciosos.");
             }
             Console.WriteLine("----------------------------------------------");
-            Console.WriteLine("----------------------------------------------");
             Console.WriteLine("Presione cualquier tecla para salir");
             Console.ReadKey();
         }
