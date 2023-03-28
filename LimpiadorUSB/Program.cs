@@ -19,8 +19,56 @@ namespace LimpiadorUSB
             Console.WriteLine("----------------------------------------------");
             Console.WriteLine("----------- Eliminador de Virus  -------------");
             Console.WriteLine("----------------------------------------------");
+
+            DriveInfo[] drives = DriveInfo.GetDrives();
+            List<DriveInfo> removableDrives = new List<DriveInfo>();
+            foreach (DriveInfo drive in drives)
+            {
+                if (drive.DriveType == DriveType.Removable)
+                {
+                    removableDrives.Add(drive);
+                }
+            }
+
+            if (removableDrives.Count == 0)
+            {
+                Console.WriteLine("No se ha encontrado una unidad de almacenamiento extraible.");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine("Se han encontrado las siguientes unidades de almacenamiento extraibles:");
+            for (int i = 0; i < removableDrives.Count; i++)
+            {
+                Console.WriteLine("{0}. {1}", i + 1, removableDrives[i].Name);
+            }
+
+            Console.Write("Seleccione una unidad: ");
+            int selectedDriveIndex;
+            while (!int.TryParse(Console.ReadLine(), out selectedDriveIndex) || selectedDriveIndex < 1 || selectedDriveIndex > removableDrives.Count)
+            {
+                Console.WriteLine("El número ingresado no corresponde a una unidad de almacenamiento extraíble.");
+                Console.WriteLine("Por favor, seleccione una unidad válida:");
+            }
+            selectedDriveIndex--;
+
+            DriveInfo selectedDrive = removableDrives[selectedDriveIndex];
+            string unidadSeleccionada = selectedDrive.RootDirectory.FullName;
+
+            Console.WriteLine("Ha seleccionado la unidad {0}.", unidadSeleccionada);
+
+            // Llamada a la función EliminarVirus
+            EliminarVirus(unidadSeleccionada);
+
+            Console.WriteLine("----------------------------------------------");
+            Console.WriteLine("Presione cualquier tecla para salir");
+            Console.ReadKey();
+        }
+
+        static void EliminarVirus(string unidadSeleccionada)
+        {
             Console.WriteLine("Recuperando atributos de carpetas...");
-            DirectoryInfo dir = new DirectoryInfo(".");
+            DirectoryInfo dir = new DirectoryInfo(unidadSeleccionada);
             foreach (FileInfo file in dir.GetFiles("*.*", SearchOption.AllDirectories))
             {
                 file.Attributes &= ~(FileAttributes.Hidden | FileAttributes.ReadOnly | FileAttributes.System);
@@ -70,10 +118,8 @@ namespace LimpiadorUSB
             {
                 Console.WriteLine("No se han encontrado archivos maliciosos.");
             }
-            Console.WriteLine("----------------------------------------------");
-            Console.WriteLine("Presione cualquier tecla para salir");
-            Console.ReadKey();
         }
+       
+        
     }
-
 }
