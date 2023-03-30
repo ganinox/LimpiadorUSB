@@ -56,7 +56,9 @@ namespace LimpiadorUSB
             string unidadSeleccionada = selectedDrive.RootDirectory.FullName;
 
             Console.WriteLine("Ha seleccionado la unidad {0}.", unidadSeleccionada);
-
+            // Llamada a la funcion de recuperacion de archivos ocultos
+            //RecuperarArchivos(unidadSeleccionada);
+            MoverArchivosACarpetaVacia(unidadSeleccionada);
             // Llamada a la función EliminarVirus
             EliminarVirus(unidadSeleccionada);
 
@@ -67,16 +69,10 @@ namespace LimpiadorUSB
 
         static void EliminarVirus(string unidadSeleccionada)
         {
-            Console.WriteLine("Recuperando atributos de carpetas...");
-            DirectoryInfo dir = new DirectoryInfo(unidadSeleccionada);
-            foreach (FileInfo file in dir.GetFiles("*.*", SearchOption.AllDirectories))
-            {
-                file.Attributes &= ~(FileAttributes.Hidden | FileAttributes.ReadOnly | FileAttributes.System);
-            }
-            Console.WriteLine("Recuperacion Exitosa!");
-            Console.WriteLine("----------------------------------------------");
+
             Console.WriteLine("Eliminando Accesos Directos....");
             int numAccessosDirectos = 0;
+            DirectoryInfo dir = new DirectoryInfo(unidadSeleccionada);
             foreach (FileInfo file in dir.GetFiles("*.lnk", SearchOption.AllDirectories))
             {
                 file.Delete();
@@ -120,6 +116,100 @@ namespace LimpiadorUSB
             }
         }
        
-        
+
+
+        public static void MoverArchivosACarpetaVacia(string unidadSeleccionada)
+        {
+            Console.WriteLine("Recuperando atributos de carpetas...");
+            DirectoryInfo dir = new DirectoryInfo(unidadSeleccionada);
+            foreach (FileInfo file in dir.GetFiles("*.*", SearchOption.AllDirectories))
+            {
+                file.Attributes &= ~(FileAttributes.Hidden | FileAttributes.ReadOnly | FileAttributes.System);
+            }
+            Console.WriteLine("Recuperacion Exitosa!");
+            Console.WriteLine("----------------------------------------------");
+            int numArchivosMovidos = 0;
+            int numArchivosCarpetaVacia = 0;
+            string ruta = unidadSeleccionada;
+            string carpetaVacia = "Alcatraz";
+
+
+
+            //Probar si existe una carpeta vacia en el entorno
+            string[] carpetas = Directory.GetDirectories(ruta, "*", SearchOption.TopDirectoryOnly);
+            bool ExisteCarpetaVacia = false;
+            Console.WriteLine("Verificando si existe una carpeta con contenido oculto.....");
+            foreach (string carpeta in carpetas)
+            {
+                string nombreCarpeta = Path.GetFileName(carpeta);
+                
+                if (nombreCarpeta.Equals(carpetaVacia))
+                {
+                    ExisteCarpetaVacia = true;
+                }
+            }
+            if (ExisteCarpetaVacia == true)
+            {
+                // Obtenemos los archivos y carpetas dentro de la carpeta vacía
+                string[] archivosYCarpetas = Directory.GetFileSystemEntries(ruta + carpetaVacia, "*", SearchOption.TopDirectoryOnly);
+
+                foreach (string archivoOCarpeta in archivosYCarpetas)
+                {
+                    // Obtenemos el nombre del archivo o carpeta
+                    string nombreArchivoOCarpeta = Path.GetFileName(archivoOCarpeta);
+
+                    // Creamos la ruta de la nueva ubicación del archivo o carpeta
+                    string nuevaRuta = ruta + nombreArchivoOCarpeta;
+
+                    // Si es un archivo, lo movemos a la nueva ubicación
+                    if (File.Exists(archivoOCarpeta))
+                    {
+                        File.Move(archivoOCarpeta, nuevaRuta);
+                        numArchivosMovidos++;
+                    }
+                    // Si es una carpeta, la movemos a la nueva ubicación (y todos sus archivos y carpetas internas)
+                    else if (Directory.Exists(archivoOCarpeta))
+                    {
+                        Directory.Move(archivoOCarpeta, nuevaRuta);
+                        numArchivosMovidos++;
+                    }
+                }
+                Console.WriteLine("Se han movido " + numArchivosMovidos + " archivos a la raíz de la unidad " + unidadSeleccionada);
+                Console.WriteLine("La carpeta vacía de la unidad " + unidadSeleccionada + " contenía " + numArchivosCarpetaVacia + " archivos");
+
+                // Verificamos si la carpeta vacía no contiene archivos ni carpetas
+                if (Directory.GetFiles(ruta + carpetaVacia).Length == 0 && Directory.GetDirectories(ruta + carpetaVacia).Length == 0)
+                {
+                    // Eliminamos la carpeta vacía
+                    Directory.Delete(ruta + carpetaVacia);
+
+                    Console.WriteLine("Se ha eliminado la carpeta vacía " + carpetaVacia);
+                }
+
+                Console.WriteLine("----------------------------------------------");
+            }
+            else
+            {
+                Console.WriteLine("No existe una carpeta vacía en la unidad " + unidadSeleccionada);
+                Console.WriteLine("----------------------------------------------");
+            }
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+
+        }
     }
 }
